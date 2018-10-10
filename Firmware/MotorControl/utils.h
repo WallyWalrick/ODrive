@@ -63,6 +63,8 @@ extern "C" {
 #define MACRO_MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MACRO_MIN(x, y) (((x) < (y)) ? (x) : (y))
 
+#define SQ(x) ((x) * (x))
+
 static const float one_by_sqrt3 = 0.57735026919f;
 static const float two_by_sqrt3 = 1.15470053838f;
 static const float sqrt3_by_2 = 0.86602540378f;
@@ -99,12 +101,13 @@ int mod(int dividend, int divisor);
 
 uint32_t deadline_to_timeout(uint32_t deadline_ms);
 uint32_t timeout_to_deadline(uint32_t timeout_ms);
-
 int is_in_the_future(uint32_t time_ms);
 
 uint32_t micros(void);
-
 void delay_us(uint32_t us);
+
+float our_arm_sin_f32(float x);
+float our_arm_cos_f32(float x);
 
 #ifdef __cplusplus
 }

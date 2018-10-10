@@ -1,9 +1,36 @@
 # Unreleased Features
 Please add a note of your changes below this heading if you make a Pull Request.
 
-# Unreleased
+## Fixed
+* Would ERROR_CONTROL_DEADLINE_MISSED along with every ERROR_PHASE_RESISTANCE_OUT_OF_RANGE.
 
 # Releases
+## [0.4.6] - 2018-10-07
+### Fixed
+* Broken printing of floats on ascii protocol
+
+## [0.4.5] - 2018-10-06
+### Added
+* **Trapezoidal Trajectory Planner**
+* Hook to execute protocol property written callback
+* -Wdouble-promotion warning to compilation
+
+### Changed
+* Make python tools compatible with python 2.7 (so it can be used with ROS)
+  * Threading API constructor can't take the daemon parameter, so all thread creation had to be expanded out.
+  * `TimeoutError` isn't defined, but it makes for more readable code, so I defined it as an OSError subclass.
+  * `ModuleNotFoundError` is replaced by the older ImportError.
+  * Print function imported from future
+* Using new hooks to calculate:
+  * `motor.config.current_control_bandwidth`
+    * This deprecates `motor.set_current_control_bandwidth()`
+  * `encoder.config.bandwidth`
+* Default value for `motor.resistance_calib_max_voltage` changed to 2.0
+
+### Fixed
+* An issue where the axis state machine would jump in and out of idle when there is an error
+* There is a [bug](https://github.com/ARM-software/CMSIS_5/issues/267) in the arm fast math library, which gives spikes in the output of arm_cos_f32 for input values close to -pi/2. We fixed the bug locally, and hence are using "our_arm_cos_f32".
+
 ## [0.4.4] - 2018-09-18
 ### Fixed
 * Serious reliability issue with USB communication where packets on Native and the CDC interface would collide with each other.
@@ -18,8 +45,10 @@ Please add a note of your changes below this heading if you make a Pull Request.
 * Hardcoded maximum inductance now 2500 uH.
 
 ### Fixed
+* Incorrect shifting of offset during index callback
 * Once you got an axis error `ERROR_INVALID_STATE` you could never clear it
 * Char to int conversion to read motornum on arduino example
+* GPIO above #5 would not be used correctly in some cases
 
 ## [0.4.2] - 2018-08-04
 ### Added

@@ -1,6 +1,13 @@
 #ifndef __ODRIVE_MAIN_H
 #define __ODRIVE_MAIN_H
 
+// Note on central include scheme by Samuel:
+// there are circular dependencies between some of the header files,
+// e.g. the Motor header needs a forward declaration of Axis and vice versa
+// so I figured I'd make one main header that takes care of
+// the forward declarations and right ordering
+// btw this pattern is not so uncommon, for instance IIRC the stdlib uses it too
+
 #ifdef __cplusplus
 #include <fibre/protocol.hpp>
 extern "C" {
@@ -109,6 +116,7 @@ inline ENUMTYPE operator ~ (ENUMTYPE a) { return static_cast<ENUMTYPE>(~static_c
 #include <sensorless_estimator.hpp>
 #include <controller.hpp>
 #include <motor.hpp>
+#include <trapTraj.hpp>
 #include <axis.hpp>
 #include <communication/communication.h>
 

@@ -89,7 +89,7 @@ FLAGS += '-mthumb'
 FLAGS += '-mcpu=cortex-m4'
 FLAGS += '-mfpu=fpv4-sp-d16'
 FLAGS += '-mfloat-abi=hard'
-FLAGS += { '-Wall', '-Wfloat-conversion', '-fdata-sections', '-ffunction-sections'}
+FLAGS += { '-Wall', '-Wdouble-promotion', '-Wfloat-conversion', '-fdata-sections', '-ffunction-sections'}
 
 -- debug build
 FLAGS += '-g -gdwarf-2'
@@ -105,6 +105,7 @@ LDFLAGS += '-Wl,--undefined=uxTopUsedPriority'
 
 -- common flags for ASM, C and C++
 OPT += '-Og'
+-- OPT += '-O0'
 OPT += '-ffast-math -fno-finite-math-only'
 tup.append_table(FLAGS, OPT)
 tup.append_table(LDFLAGS, OPT)
@@ -148,6 +149,8 @@ build{
     sources={
         'Drivers/DRV8301/drv8301.c',
         'MotorControl/utils.c',
+        'MotorControl/arm_sin_f32.c',
+        'MotorControl/arm_cos_f32.c',
         'MotorControl/low_level.cpp',
         'MotorControl/nvm.c',
         'MotorControl/axis.cpp',
@@ -155,6 +158,7 @@ build{
         'MotorControl/encoder.cpp',
         'MotorControl/controller.cpp',
         'MotorControl/sensorless_estimator.cpp',
+        'MotorControl/trapTraj.cpp',
         'MotorControl/main.cpp',
         'communication/communication.cpp',
         'communication/ascii_protocol.cpp',
