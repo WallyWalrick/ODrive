@@ -108,6 +108,15 @@ bool Encoder::run_index_search() {
 
     index_found_ = false;
     float phase = 0.0f;
+
+    //variables to allow reverse checking
+    bool reverse = false;
+    unsigned int loop_counter_check = axis_->loop_counter_ + (CURRENT_MEAS_HZ * 1000) / config_.min_ms_per_direction;
+    int32_t min_shadow_pos = shadow_count_;
+    int32_t min_checked_shadow_pos = shadow_count_;
+    int32_t max_shadow_pos = shadow_count_;
+    int32_t max_checked_shadow_pos = shadow_count_;
+
     axis_->run_control_loop([&](){
         phase = wrap_pm_pi(phase + omega * current_meas_period);
 
@@ -117,6 +126,33 @@ bool Encoder::run_index_search() {
             return false; // error set inside enqueue_voltage_timings
         axis_->motor_.log_timing(Motor::TIMING_LOG_IDX_SEARCH);
 
+        if (config_.enable_both_direcitons)
+        {
+            if (min_shadow_pos > shadow_count_) { min_shadow_pos = shadow_count_; }
+            if (max_shadow_pos < shadow_count_) { max_shadow_pos = shadow_count_; }
+
+            if (loop_counter_check <= axis_->loop_counter_) {
+                if (min_shadow_pos < min_checked_shadow_pos || max_shadow_pos > max_checked_shadow_pos) {
+                    loop_counter_check = axis_->loop_counter_ + (CURRENT_MEAS_HZ * 1000) / config_.min_ms_per_direction;
+                    min_checked_shadow_pos = min_shadow_pos;
+                    max_checked_shadow_pos = max_shadow_pos;
+                }
+                else {
+                    if (!reverse) {
+                        omega = -omega;    
+                        reverse = true;
+                        min_shadow_pos = shadow_count_;
+                        max_shadow_pos = shadow_count_;
+                        min_checked_shadow_pos = shadow_count_;
+                        max_checked_shadow_pos = shadow_count_;
+                        loop_counter_check = axis_->loop_counter_ + (CURRENT_MEAS_HZ * 1000) / config_.min_ms_per_direction;
+                    }
+                    else {
+                        return false;
+                    }
+                }
+            }
+        }
         // continue until the index is found
         return !index_found_;
     });

@@ -36,6 +36,8 @@ public:
         float offset_float = 0.0f; // Sub-count phase alignment offset
         float calib_range = 0.02f;
         float bandwidth = 1000.0f;
+        bool enable_both_direcitons = false;
+        int min_ms_per_direction = 4000;
     };
 
     Encoder(const EncoderHardwareConfig_t& hw_config,
@@ -104,7 +106,9 @@ public:
                 make_protocol_property("offset_float", &config_.offset_float),
                 make_protocol_property("bandwidth", &config_.bandwidth,
                     [](void* ctx) { static_cast<Encoder*>(ctx)->update_pll_gains(); }, this),
-                make_protocol_property("calib_range", &config_.calib_range)
+                make_protocol_property("calib_range", &config_.calib_range),
+                make_protocol_property("enable_both_direcitons", &config_.enable_both_direcitons),
+                make_protocol_property("min_ms_per_direction", &config_.min_ms_per_direction)
             )
         );
     }

@@ -9,6 +9,8 @@ class Endstop {
         int32_t offset = 0;
         bool is_active_high = false;
         float debounce_ms = 100.0f;
+        float home_percentage = 0.0f;
+        bool physical_endstop = false;
     };
 
     Endstop(Endstop::Config_t& config);
@@ -23,16 +25,20 @@ class Endstop {
     bool getEndstopState();
 
     bool endstop_state_ = false;
+    int32_t offset_from_home = 0;
 
     auto make_protocol_definitions() {
         return make_protocol_member_list(
             make_protocol_ro_property("endstop_state_", &endstop_state_),
+            make_protocol_ro_property("offset_from_home", &offset_from_home),            
             make_protocol_object("config",
                                  make_protocol_property("gpio_num", &config_.gpio_num),
                                  make_protocol_property("enabled", &config_.enabled),
                                  make_protocol_property("offset", &config_.offset),
                                  make_protocol_property("is_active_high", &config_.is_active_high),
                                  make_protocol_property("debounce_ms", &config_.debounce_ms)));
+                                 make_protocol_property("home_percentage", &config_.home_percentage),
+                                 make_protocol_property("physical_endstop", &config_.physical_endstop)));                                 
     }
 
    private:

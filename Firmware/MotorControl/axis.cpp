@@ -194,8 +194,14 @@ bool Axis::run_sensorless_control_loop() {
     return check_for_errors();
 }
 
+// variables for homing - run_control_loop([this]() wouldn't allow local vars to be used
+bool finding_min_endstop = true;
+unsigned int loop_counter_check = 0;
+
 bool Axis::run_closed_loop_control_loop() {
     set_step_dir_enabled(config_.enable_step_dir);
+    finding_min_endstop = true;
+    loop_counter_check = loop_counter_ + (CURRENT_MEAS_HZ * min_endstop_.config_.min_ms_homing) / 1000;
     run_control_loop([this]() {
         // Note that all estimators are updated in the loop prefix in run_control_loop
         float current_setpoint;
@@ -206,14 +212,60 @@ bool Axis::run_closed_loop_control_loop() {
 
         // Handle the homing case
         if (homing_state_ == HOMING_STATE_HOMING) {
-            if (min_endstop_.getEndstopState()) {
-                encoder_.set_linear_count(min_endstop_.config_.offset);
-                controller_.set_pos_setpoint(0.0f, 0.0f, 0.0f);
-                homing_state_ = HOMING_STATE_MOVE_TO_ZERO;
+            Endstop *current_endstop = &min_endstop_;
+            if (!finding_min_endstop) {
+                current_endstop = &max_endstop_;
+            }
+            bool found_end = (encoder_.vel_estimate_ == 0.0f && loop_counter_check <= loop_counter_);
+
+            if (!current_endstop->getEndstopState() && found_end && !current_endstop->config_.physical_endstop)
+            {
+                //TODO return error
+            }
+
+            if (current_endstop->getEndstopState() || found_end)
+            {
+                if (finding_min_endstop)
+                {
+                    min_endstop_.offset_from_home = encoder_.shadow_count_; //temp holding position
+                    finding_min_endstop = false;
+                    loop_counter_check = loop_counter_ + (CURRENT_MEAS_HZ * current_endstop->config_.min_ms_homing) / 1000;
+                    if (max_endstop_.config_.enabled) {
+                        controller_.vel_integrator_current_ = 0.0f;
+                        controller_.set_vel_setpoint(controller_.config_.homing_speed, 0.0f);
+                    } else {
+                        encoder_.set_linear_count(min_endstop_.config_.offset);
+                        controller_.set_pos_setpoint(0.0f, 0.0f, 0.0f);
+                        homing_state_ = HOMING_STATE_MOVE_TO_ZERO;
+                    }  
+                }
+                else
+                {
+                    int total_cpr = encoder_.shadow_count_ - min_endstop_.offset_from_home;
+                    if (min_endstop_.config_.home_percentage > 0) {
+                        min_endstop_.offset_from_home = -(total_cpr * 1.0f) * (min_endstop_.config_.home_percentage / 100.0f);
+                        max_endstop_.offset_from_home = total_cpr + min_endstop_.offset_from_home;
+                        encoder_.set_linear_count(-min_endstop_.offset_from_home);
+                    }
+                    else {
+                        min_endstop_.offset_from_home = min_endstop_.config_.offset;
+                        max_endstop_.offset_from_home = total_cpr + min_endstop_.offset_from_home;
+                        encoder_.set_linear_count(min_endstop_.config_.offset);
+                    }
+
+                    controller_.set_pos_setpoint(0.0f, 0.0f, 0.0f);
+                    homing_state_ = HOMING_STATE_MOVE_TO_ZERO;
+                }
+
             }
         } else if (homing_state_ == HOMING_STATE_MOVE_TO_ZERO) {
             if(!min_endstop_.getEndstopState()){
-                homing_state_ = HOMING_STATE_IDLE;
+                    trap_.planTrapezoidal(0.0f, encoder_.pos_estimate_, encoder_.vel_estimate_,
+                                controller_.config_.homing_speed,
+                                controller_.config_.homing_speed / 4.0f,
+                                controller_.config_.homing_speed / 4.0f);
+                                controller_.traj_start_loop_count_ = loop_counter_;
+                                controller_.config_.control_mode = controller_.CTRL_MODE_TRAJECTORY_CONTROL;
             }
         } else {
             // Check for endstop presses
