@@ -37,7 +37,7 @@ public:
         float calib_range = 0.02f;
         float bandwidth = 1000.0f;
         bool enable_both_direcitons = false;
-        int min_ms_per_direction = 4000;
+        int32_t min_ms_per_direction = 4000;
     };
 
     Encoder(const EncoderHardwareConfig_t& hw_config,
